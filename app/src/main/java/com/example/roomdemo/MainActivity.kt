@@ -1,29 +1,36 @@
 package com.example.roomdemo
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.roomdemo.ui.theme.RoomDemoTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.roomdemo.ui.theme.RoomDemoTheme
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 
 @Composable
 fun TitleRow(head1: String, head2: String, head3: String) {
@@ -77,7 +84,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             RoomDemoTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    ScreenSetup(modifier = Modifier.padding(innerPadding))
+                    val owner = LocalViewModelStoreOwner.current
+                    owner?.let {
+                        val viewModel: MainViewModel = viewModel(
+                            it,
+                            "MainViewModel",
+                            MainViewModelFactory(LocalContext.current.applicationContext as Application)
+                        )
+                        ScreenSetup(
+                            modifier = Modifier.padding(innerPadding),
+                            viewModel = viewModel
+                        )
+                    }
                 }
             }
         }
@@ -85,19 +103,30 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun ScreenSetup(modifier: Modifier = Modifier) {
-    MainScreen(modifier)
+fun ScreenSetup(modifier: Modifier = Modifier, viewModel: MainViewModel) {
+    val allProducts by viewModel.allProducts.observeAsState(listOf())
+    val searchResults by viewModel.searchResults.observeAsState(listOf())
+
+    MainScreen(
+        modifier = modifier,
+        allProducts = allProducts,
+        searchResults = searchResults,
+        viewModel = viewModel
+    )
 }
 
 @Composable
-fun MainScreen(modifier: Modifier = Modifier) {
-    Text("RoomDemo - База данных Room")
+fun MainScreen(
+    modifier: Modifier = Modifier,
+    allProducts: List<Product>,
+    searchResults: List<Product>,
+    viewModel: MainViewModel
+) {
+    // Пока пусто — заполним на следующем шаге
 }
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun ScreenSetupPreview() {
-    RoomDemoTheme {
-        ScreenSetup()
+class MainViewModelFactory(val application: Application) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return MainViewModel(application) as T
     }
 }
